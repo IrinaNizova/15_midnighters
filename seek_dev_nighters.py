@@ -6,8 +6,8 @@ from datetime import datetime, timezone
 def load_attempts():
     pages = 10
     for page in range(1, pages):
-        url = 'https://devman.org/api/challenges/solution_attempts/?page={}'
-        users = requests.get(url.format(page))
+        url = 'https://devman.org/api/challenges/solution_attempts/?page={}'.format(page)
+        users = requests.get(url)
         for user in users.json()['records']:
             yield user
 
@@ -15,14 +15,14 @@ def load_attempts():
 def get_midnighters():
     midnighters = []
     today = datetime.now(timezone.utc)
-    for i in load_attempts():
-        user_timezone = pytz.timezone(i['timezone'])
-        published_date = user_timezone.localize(datetime.fromtimestamp(i['timestamp']))
+    for user in load_attempts():
+        user_timezone = pytz.timezone(user['timezone'])
+        published_date = user_timezone.localize(datetime.fromtimestamp(user['timestamp']))
         # I limited the information about users to one week
         if (today - published_date).days > 7:
             break
         if published_date.hour >= 0 and published_date.hour < 7:
-            midnighters.append({'username': i['username'], 'date': published_date})
+            midnighters.append({'username': user['username'], 'date': published_date})
     return midnighters
 
 
