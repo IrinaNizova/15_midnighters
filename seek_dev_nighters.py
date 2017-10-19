@@ -6,8 +6,8 @@ from datetime import datetime, timezone
 def load_attempts():
     pages = 10
     for page in range(1, pages):
-        url = 'https://devman.org/api/challenges/solution_attempts/?page={}'.format(page)
-        users = requests.get(url)
+        url = 'https://devman.org/api/challenges/solution_attempts/'
+        users = requests.get(url, {'page': page})
         for user in users.json()['records']:
             yield user
 
