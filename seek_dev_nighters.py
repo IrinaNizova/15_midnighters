@@ -3,33 +3,40 @@ import pytz
 from datetime import datetime, timezone
 
 
-def load_attempts():
-    pages = 10
-    for page in range(1, pages):
-        url = 'https://devman.org/api/challenges/solution_attempts/'
-        users = requests.get(url, {'page': page})
-        for user in users.json()['records']:
-            yield user
+def get_json_from_devman(page):
+    url = 'https://devman.org/api/challenges/solution_attempts/'
+    return requests.get(url, {'page': page}).json()
+
+
+def get_user_data(json):
+    for user in json['records']:
+        user_timezone = pytz.timezone(user['timezone'])
+        published_date = user_timezone.localize(
+            datetime.fromtimestamp(user['timestamp']))
+        user['published_date'] = published_date
+        if published_date .hour >= 0 and published_date.hour < 7:
+            user['is_night'] = True
+        else:
+            user['is_night'] = False
+        yield user
 
 
 def get_midnighters():
     midnighters = []
-    today = datetime.now(timezone.utc)
-    for user in load_attempts():
-        user_timezone = pytz.timezone(user['timezone'])
-        published_date = user_timezone.localize(datetime.fromtimestamp(user['timestamp']))
-        # I limited the information about users to one week
-        if (today - published_date).days > 7:
-            break
-        if published_date.hour >= 0 and published_date.hour < 7:
-            midnighters.append({'username': user['username'], 'date': published_date})
+    pages = get_json_from_devman(1)["number_of_pages"]
+    for page in range(1, pages+1):
+        json = get_json_from_devman(page)
+        for user in get_user_data(json):
+            if user['is_night']:
+                midnighters.append({'username': user['username'],
+                                    'date': user['published_date']})
     return midnighters
 
 
 if __name__ == '__main__':
     midnighters = get_midnighters()
     uniq_users = set([midnighter['username'] for midnighter in midnighters])
-    print('There {} unique users for the last week, who send tasks at night'
+    print('There {} unique users, who send tasks at night'
           .format(len(uniq_users)))
     for user in uniq_users:
         print(user)
