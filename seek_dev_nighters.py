@@ -23,7 +23,8 @@ def get_user_data(json):
 
 def get_midnighters():
     midnighters = []
-    pages = get_json_from_devman(1)["number_of_pages"]
+    first_page = 1
+    pages = get_json_from_devman(first_page)["number_of_pages"]
     for page in range(1, pages+1):
         json = get_json_from_devman(page)
         for user in get_user_data(json):
